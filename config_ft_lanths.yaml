@@ -1,0 +1,38 @@
+batch_size: 128
+epochs: 200
+eval_every_n_epochs: 1
+fine_tune_from: ./runs_contrast/Dec01_17-00-50
+#./runs_contrast/Oct30_17-55-19
+#./runs_contrast/Oct28_00-50-41
+# fine_tune_from: runs_contrast/Apr21_18-05-12
+log_every_n_steps: 50
+gpu: cuda:2
+random_seed: 1
+
+
+optim:
+  optimizer: Adam
+  lr: 0.001
+  momentum: 0.9
+  weight_decay: 1e-6
+
+model: 
+  atom_fea_len: 64
+  h_fea_len: 128
+  n_conv: 3
+  n_h: 1
+
+dataset:
+  root_dir: lanths
+  max_num_nbr: 12
+  radius: 8
+  dmin: 0
+  step: 0.2
+
+
+dataloader:
+  val_ratio: 0.2
+  test_ratio: 0.2
+  num_workers: 4
+
+
