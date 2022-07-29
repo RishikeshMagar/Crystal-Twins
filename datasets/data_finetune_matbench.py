@@ -87,7 +87,6 @@ def get_train_val_test_loader(train_dataset, test_dataset, collate_fn=default_co
     ))
     
     indices_train_val =  list(range(len(train_dataset)))
-    indices_test = list(range())
     train_sampler = SubsetRandomSampler(indices_train_val[:train_size])
     
     val_sampler = SubsetRandomSampler(
@@ -317,15 +316,15 @@ class CIF_train_val_Data(Dataset):
     target: torch.Tensor shape (1, )
     cif_id: str or int
     """
-    def __init__(self,task, subset_data, fold_num, max_num_nbr=12, radius=8, dmin=0, step=0.2):
+    def __init__(self,task_type, subset_data, fold_num, max_num_nbr=12, radius=8, dmin=0, step=0.2):
         
-        self.mb = MatbenchBenchmark(autoload=False,subset=subset_data)
+        self.mb = MatbenchBenchmark(autoload=False,subset=[subset_data])
         
         for task in self.mb.tasks:
             task.load()
             train_df = task.get_train_and_val_data(fold_num, as_type="df")
         # self.root_dir = root_dir
-        self.task = task
+        self.task_type = task_type
         self.max_num_nbr, self.radius = max_num_nbr, radius
         # assert os.path.exists(root_dir), 'root_dir does not exist!'
         # id_prop_file = os.path.join(self.root_dir, 'id_prop.csv')
@@ -336,7 +335,7 @@ class CIF_train_val_Data(Dataset):
         self.id_prop_data = train_df
         # random.seed(random_seed)
         # random.shuffle(self.id_prop_data)
-        atom_init_file = os.path.join('dataset/atom_init.json')
+        atom_init_file = os.path.join('datasets/atom_init.json')
         assert os.path.exists(atom_init_file), 'atom_init.json does not exist!'
         self.ari = AtomCustomJSONInitializer(atom_init_file)
         self.gdf = GaussianDistance(dmin=dmin, dmax=self.radius, step=step)
@@ -379,8 +378,10 @@ class CIF_train_val_Data(Dataset):
         atom_fea = torch.Tensor(atom_fea)
         nbr_fea = torch.Tensor(nbr_fea)
         nbr_fea_idx = torch.LongTensor(nbr_fea_idx)
-        if self.task == 'regression':
+        
+        if self.task_type == 'regression':
             target = torch.Tensor([float(target)])
+        
         else:
             if target == 'True':
                 label = 0
@@ -441,15 +442,15 @@ class CIF_test_Data(Dataset):
     target: torch.Tensor shape (1, )
     cif_id: str or int
     """
-    def __init__(self,task, subset_data, fold_num, max_num_nbr=12, radius=8, dmin=0, step=0.2):
+    def __init__(self,task_type, subset_data, fold_num, max_num_nbr=12, radius=8, dmin=0, step=0.2):
         
-        self.mb_test = MatbenchBenchmark(autoload=False,subset=subset_data)
+        self.mb_test = MatbenchBenchmark(autoload=False,subset=[subset_data])
         
         for task in self.mb_test.tasks:
             task.load()
             test_df = task.get_test_data(fold_num, include_target=True, as_type="df")
         # self.root_dir = root_dir
-        self.task = task
+        self.task_type = task_type
         self.max_num_nbr, self.radius = max_num_nbr, radius
         # assert os.path.exists(root_dir), 'root_dir does not exist!'
         # id_prop_file = os.path.join(self.root_dir, 'id_prop.csv')
@@ -460,7 +461,7 @@ class CIF_test_Data(Dataset):
         self.id_prop_test_data = test_df
         # random.seed(random_seed)
         # random.shuffle(self.id_prop_data)
-        atom_init_file = os.path.join('dataset/atom_init.json')
+        atom_init_file = os.path.join('datasets/atom_init.json')
         assert os.path.exists(atom_init_file), 'atom_init.json does not exist!'
         self.ari = AtomCustomJSONInitializer(atom_init_file)
         self.gdf = GaussianDistance(dmin=dmin, dmax=self.radius, step=step)
@@ -503,7 +504,7 @@ class CIF_test_Data(Dataset):
         atom_fea = torch.Tensor(atom_fea)
         nbr_fea = torch.Tensor(nbr_fea)
         nbr_fea_idx = torch.LongTensor(nbr_fea_idx)
-        if self.task == 'regression':
+        if self.task_type == 'regression':
             target = torch.Tensor([float(target)])
         else:
             if target == 'True':

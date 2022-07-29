@@ -18,9 +18,9 @@ from torch.autograd import Variable
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 
-from dataset.data_finetune_matbench import CIF_train_val_Data,CIF_test_Data
-from dataset.data_finetune_matbench import collate_pool, get_train_val_test_loader
-from model.cgcnn_finetune import CrystalGraphConvNet
+from datasets.data_finetune_matbench import CIF_train_val_Data,CIF_test_Data
+from datasets.data_finetune_matbench import collate_pool, get_train_val_test_loader
+from models.cgcnn_finetune import CrystalGraphConvNet
 
 import warnings
 warnings.simplefilter("ignore")
@@ -31,7 +31,7 @@ from matbench.bench import MatbenchBenchmark
 def _save_config_file(model_checkpoints_folder):
     if not os.path.exists(model_checkpoints_folder):
         os.makedirs(model_checkpoints_folder)
-        shutil.copy('./config_ft.yaml', os.path.join(model_checkpoints_folder, 'config_ft.yaml'))
+        shutil.copy('./config_ft_matbench.yaml', os.path.join(model_checkpoints_folder, 'config_ft.yaml'))
 
 
 class FineTune(object):
@@ -43,13 +43,13 @@ class FineTune(object):
         log_dir = os.path.join('runs_ft', dir_name)
         self.writer = SummaryWriter(log_dir=log_dir)
 
-        if self.config['task'] == 'classification':
+        if self.config['task_type'] == 'classification':
             self.criterion = nn.NLLLoss()
         else:
             self.criterion = nn.MSELoss()
 
-        self.train_dataset = CIF_train_val_Data(task = self.config['task'], subset_data = self.config['data_name'], **self.config['dataset'])
-        self.test_dataset  = CIF_test_Data(task = self.config['task'], subset_data = self.config['data_name'], **self.config['dataset']) 
+        self.train_dataset = CIF_train_val_Data(task_type = self.config['task_type'], subset_data = self.config['data_name'], **self.config['dataset'])
+        self.test_dataset  = CIF_test_Data(task_type = self.config['task_type'], subset_data = self.config['data_name'], **self.config['dataset']) 
 
         self.random_seed = self.config['random_seed']
         collate_fn = collate_pool
@@ -65,17 +65,17 @@ class FineTune(object):
         )
 
         # obtain target value normalizer
-        if self.config['task'] == 'classification':
+        if self.config['task_type'] == 'classification':
             self.normalizer = Normalizer(torch.zeros(2))
             self.normalizer.load_state_dict({'mean': 0., 'std': 1.})
         else:
-            if len(self.dataset) < 500:
-                warnings.warn('Dataset has less than 500 data points. '
+            if len(self.train_dataset) < 500:
+                warnings.warn('Train Dataset has less than 500 data points. '
                             'Lower accuracy is expected. ')
-                sample_data_list = [self.dataset[i] for i in range(len(self.dataset))]
+                sample_data_list = [self.train_dataset[i] for i in range(len(self.train_dataset))]
             else:
-                sample_data_list = [self.dataset[i] for i in
-                                    sample(range(len(self.dataset)), 500)]
+                sample_data_list = [self.train_dataset[i] for i in
+                                    sample(range(len(self.train_dataset)), 500)]
             _, sample_target, _ = collate_pool(sample_data_list)
             self.normalizer = Normalizer(sample_target)
 
@@ -111,11 +111,11 @@ class FineTune(object):
         # model = GINet(**self.config["model"]).to(self.device)
         # model = self._load_pre_trained_weights(model)
 
-        structures, _, _ = self.dataset[0]
+        structures, _, _ = self.train_dataset[0]
         orig_atom_fea_len = structures[0].shape[-1]
         nbr_fea_len = structures[1].shape[-1]
         model = CrystalGraphConvNet(orig_atom_fea_len, nbr_fea_len,
-                                    classification=(self.config['task']=='classification'), 
+                                    classification=(self.config['task_type']=='classification'), 
                                     **self.config['model']
         )
         
@@ -168,7 +168,7 @@ class FineTune(object):
                                 input[2],
                                 input[3])
                 
-                if self.config['task'] == 'regression':
+                if self.config['task_type'] == 'regression':
                     target_normed = self.normalizer.norm(target)
                 else:
                     target_normed = target.view(-1).long()
@@ -196,13 +196,13 @@ class FineTune(object):
 
             # validate the model if requested
             if epoch_counter % self.config['eval_every_n_epochs'] == 0:
-                if self.config['task'] == 'classification': 
+                if self.config['task_type'] == 'classification': 
                     valid_loss, valid_roc_auc = self._validate(model, self.valid_loader)
                     if valid_roc_auc > best_valid_roc_auc:
                         # save the model weights
                         best_valid_roc_auc = valid_roc_auc
                         torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, 'model.pth'))
-                elif self.config['task'] == 'regression': 
+                elif self.config['task_type'] == 'regression': 
                     valid_loss, valid_mae = self._validate(model, self.valid_loader)
                     if valid_mae < best_valid_mae:
                         # save the model weights
@@ -251,7 +251,7 @@ class FineTune(object):
 
     def _validate(self, model, valid_loader):
         losses = AverageMeter()
-        if self.config['task'] == 'regression':
+        if self.config['task_type'] == 'regression':
             mae_errors = AverageMeter()
         else:
             accuracies = AverageMeter()
@@ -274,7 +274,7 @@ class FineTune(object):
                                 input[2],
                                 input[3])
                 
-                if self.config['task'] == 'regression':
+                if self.config['task_type'] == 'regression':
                     target_normed = self.normalizer.norm(target)
                 else:
                     target_normed = target.view(-1).long()
@@ -289,7 +289,7 @@ class FineTune(object):
         
                 loss = self.criterion(output, target_var)
 
-                if self.config['task'] == 'regression':
+                if self.config['task_type'] == 'regression':
                     mae_error = mae(self.normalizer.denorm(output.data.cpu()), target)
                     losses.update(loss.data.cpu().item(), target.size(0))
                     mae_errors.update(mae_error, target.size(0))
@@ -303,7 +303,7 @@ class FineTune(object):
                     fscores.update(fscore, target.size(0))
                     auc_scores.update(auc_score, target.size(0))
             
-            if self.config['task'] == 'regression':
+            if self.config['task_type'] == 'regression':
                 print('Test: [{0}/{1}], '
                       'Loss {loss.val:.4f} ({loss.avg:.4f}), '
                       'MAE {mae_errors.val:.3f} ({mae_errors.avg:.3f})'.format(
@@ -323,7 +323,7 @@ class FineTune(object):
         
         model.train()
 
-        if self.config['task'] == 'regression':
+        if self.config['task_type'] == 'regression':
             print('MAE {mae_errors.avg:.3f}'.format(mae_errors=mae_errors))
             return losses.avg, mae_errors.avg
         else:
@@ -340,7 +340,7 @@ class FineTune(object):
         print("Loaded trained model with success.")
 
         losses = AverageMeter()
-        if self.config['task'] == 'regression':
+        if self.config['task_type'] == 'regression':
             mae_errors = AverageMeter()
         else:
             accuracies = AverageMeter()
@@ -367,7 +367,7 @@ class FineTune(object):
                                 input[2],
                                 input[3])
                 
-                if self.config['task'] == 'regression':
+                if self.config['task_type'] == 'regression':
                     target_normed = self.normalizer.norm(target)
                 else:
                     target_normed = target.view(-1).long()
@@ -382,7 +382,7 @@ class FineTune(object):
         
                 loss = self.criterion(output, target_var)
 
-                if self.config['task'] == 'regression':
+                if self.config['task_type'] == 'regression':
                     mae_error = mae(self.normalizer.denorm(output.data.cpu()), target)
                     losses.update(loss.data.cpu().item(), target.size(0))
                     mae_errors.update(mae_error, target.size(0))
@@ -410,7 +410,7 @@ class FineTune(object):
                     test_cif_ids += batch_cif_ids
 
             
-            if self.config['task'] == 'regression':
+            if self.config['task_type'] == 'regression':
                 print('Test: [{0}/{1}], '
                       'Loss {loss.val:.4f} ({loss.avg:.4f}), '
                       'MAE {mae_errors.val:.3f} ({mae_errors.avg:.3f})'.format(
@@ -436,7 +436,7 @@ class FineTune(object):
         
         self.model.train()
 
-        if self.config['task'] == 'regression':
+        if self.config['task_type'] == 'regression':
             print('MAE {mae_errors.avg:.3f}'.format(mae_errors=mae_errors))
             return losses.avg, mae_errors.avg
         else:
@@ -517,42 +517,42 @@ class AverageMeter(object):
     
 
 if __name__ == "__main__":
-    config = yaml.load(open("config_ft.yaml", "r"), Loader=yaml.FullLoader)
+    config = yaml.load(open("config_ft_matbench.yaml", "r"), Loader=yaml.FullLoader)
     print(config)
 
-    if 'band' in config['dataset']['root_dir']:
-        config['task'] = 'regression'
+    if 'gap' in config['data_name']:
+        config['task_type'] = 'regression'
         task_name = 'band'
-    elif 'fermi' in config['dataset']['root_dir']:
-        config['task'] = 'regression'
-        task_name = 'fermi'
-    elif 'Is_Metal_cifs' in config['dataset']['root_dir']:
-        config['task'] = 'classification'
-        task_name = 'Is_Metal_cifs'
-    elif 'MP-formation-energy' in config['dataset']['root_dir']:
-        config['task'] = 'regression'
-        task_name = 'MP_energy'
-    elif 'lanths' in config['dataset']['root_dir']:
-        config['task'] = 'regression'
-        task_name = 'lanths'
-    elif 'jdft2d' in config['dataset']['root_dir']:
-        config['task'] = 'regression'
-        task_name = 'jdft2d'
-    elif 'phonons' in config['dataset']['root_dir']:
-        config['task'] = 'regression'
+    # elif 'fermi' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'fermi'
+    # elif 'Is_Metal_cifs' in config['dataset']['root_dir']:
+    #     config['task'] = 'classification'
+    #     task_name = 'Is_Metal_cifs'
+    # elif 'MP-formation-energy' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'MP_energy'
+    # elif 'lanths' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'lanths'
+    # elif 'jdft2d' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'jdft2d'
+    elif 'phonons' in config['data_name']:
+        config['task_type'] = 'regression'
         task_name = 'phonons'
-    elif 'perovskites' in config['dataset']['root_dir']:
-        config['task'] = 'regression'
-        task_name = 'perovskites'
-    elif 'FE' in config['dataset']['root_dir']:
-        config['task'] = 'regression'
-        task_name = 'FE'
-    elif 'GVRH' in config['dataset']['root_dir']:
-        config['task'] = 'regression'
-        task_name = 'GVRH'
-    elif 'HOIP' in config['dataset']['root_dir']:
-        config['task'] = 'regression'
-        task_name = 'HOIP'
+    # elif 'perovskites' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'perovskites'
+    # elif 'FE' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'FE'
+    # elif 'GVRH' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'GVRH'
+    # elif 'HOIP' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'HOIP'
 
     fine_tune = FineTune(config)
     fine_tune.train()
