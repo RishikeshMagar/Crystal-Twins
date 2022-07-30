@@ -15,7 +15,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
 
 from datasets.data_finetune_matbench import CIF_train_val_Data,CIF_test_Data
@@ -132,18 +132,19 @@ class FineTune(object):
 
         if self.config['optim']['optimizer'] == 'SGD':
             optimizer = optim.SGD(
-                [{'params': base_params, 'lr': self.config['optim']['lr']*0.2}, {'params': params}],
+                [{'params': base_params, 'lr': self.config['optim']['lr']*1}, {'params': params}],
                  self.config['optim']['lr'], momentum=self.config['optim']['momentum'], 
                 weight_decay=eval(self.config['optim']['weight_decay'])
             )
         elif self.config['optim']['optimizer'] == 'Adam':
             optimizer = optim.Adam(
-                [{'params': base_params, 'lr': self.config['optim']['lr']*0.2}, {'params': params}],
+                [{'params': base_params, 'lr': self.config['optim']['lr']*1}, {'params': params}],
                 self.config['optim']['lr'], weight_decay=eval(self.config['optim']['weight_decay'])
             )
         else:
             raise NameError('Only SGD or Adam is allowed as optimizer')        
         
+        scheduler = MultiStepLR(optimizer,milestones = [600,800],gamma=0.1)
         model_checkpoints_folder = os.path.join(self.writer.log_dir, 'checkpoints')
 
         # save config file
@@ -212,6 +213,7 @@ class FineTune(object):
                     self.writer.add_scalar('valid_loss', valid_loss, global_step=valid_n_iter)
                     valid_n_iter += 1
             
+            scheduler.step()
         self.model = model
            
     def _load_pre_trained_weights(self, model):
@@ -523,6 +525,10 @@ if __name__ == "__main__":
     if 'gap' in config['data_name']:
         config['task_type'] = 'regression'
         task_name = 'band'
+    
+    elif 'gvrh' in config['data_name']:
+        config['task_type'] = 'regression'
+        task_name = 'gvrh'
     # elif 'fermi' in config['dataset']['root_dir']:
     #     config['task'] = 'regression'
     #     task_name = 'fermi'
@@ -561,9 +567,9 @@ if __name__ == "__main__":
     import pandas as pd
     ftf = config['fine_tune_from'].split('/')[-1]
     seed = config['random_seed']
-    fn = '{}_{}_200epochs_{}.csv'.format(ftf, task_name,seed)
+    fn = '{}_{}.csv'.format(ftf, task_name)
     print(fn)
-    df = pd.DataFrame([[loss, metric.item()]])
+    df = pd.DataFrame([[loss, metric.item(),config['dataset']['fold_num']]])
     df.to_csv(
         os.path.join('experiments', fn),
         mode='a', index=False, header=False

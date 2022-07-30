@@ -1,5 +1,5 @@
 batch_size: 128
-epochs: 1000
+epochs: 1
 eval_every_n_epochs: 1
 fine_tune_from: ./runs_contrast/Dec01_17-00-50
 #./runs_contrast/Oct30_17-55-19
