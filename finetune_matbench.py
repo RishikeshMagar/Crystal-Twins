@@ -144,7 +144,7 @@ class FineTune(object):
         else:
             raise NameError('Only SGD or Adam is allowed as optimizer')        
         
-        scheduler = MultiStepLR(optimizer,milestones = [600,800],gamma=0.1)
+        scheduler = MultiStepLR(optimizer,milestones = [200,400,600,800],gamma=0.5) ##200,500,800 - 0.5 #fold1 and ##800 0.1 fold zero and ## 200, 400, 600, 800 gamma 0.5  fold 0
         model_checkpoints_folder = os.path.join(self.writer.log_dir, 'checkpoints')
 
         # save config file
@@ -529,6 +529,9 @@ if __name__ == "__main__":
     elif 'gvrh' in config['data_name']:
         config['task_type'] = 'regression'
         task_name = 'gvrh'
+    elif 'kvrh' in config['data_name']:
+        config['task_type'] = 'regression'
+        task_name = 'kvrh'
     # elif 'fermi' in config['dataset']['root_dir']:
     #     config['task'] = 'regression'
     #     task_name = 'fermi'
