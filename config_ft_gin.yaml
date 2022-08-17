@@ -1,23 +1,25 @@
 batch_size: 256
 epochs: 100
 eval_every_n_epochs: 1
-fine_tune_from: None
+fine_tune_from: ./runs_contrast/Aug11_19-39-33
 log_every_n_steps: 50
 weight_decay: 1e-6
 fp16_precision: False
 init_lr: 0.001
-gpu: cuda:2
+gpu: cuda:0
 
 model: 
   num_layer: 5
-  emb_dim: 128
-  feat_dim: 256
+  emb_dim: 256
+  feat_dim: 1024
   JK: last
   drop_ratio: 0.0
 
 dataset:
   num_workers: 4
-  valid_size: 0.1
-  test_size: 0.1
-  data_dir: perovskites
+  valid_size: 0.2
+  test_size: 0.2
+  data_dir: lanths
+  task: regression
+  random_seed: 101
   k: 12
