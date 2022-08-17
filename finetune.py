@@ -11,7 +11,15 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_error
 
-from model.gin_ft import GINet
+from models.gin_ft import GINet
+from datasets.data_ft_ginet import CrystalDatasetWrapper
+import yaml
+
+import warnings
+warnings.simplefilter("ignore")
+warnings.warn("deprecated", UserWarning)
+warnings.warn("deprecated", FutureWarning)
+
 
 
 def _save_config_file(model_checkpoints_folder):
@@ -128,7 +136,7 @@ class FineTune(object):
             # checkpoints_folder = os.path.join('./runs', self.config['fine_tune_from'], 'checkpoints')
             checkpoints_folder = os.path.join(self.config['fine_tune_from'], 'checkpoints')
             # state_dict = torch.load(os.path.join(checkpoints_folder, 'model.pth'), map_location=self.device)
-            state_dict = torch.load(os.path.join(checkpoints_folder, 'model_34.pth'), map_location=self.device)
+            state_dict = torch.load(os.path.join(checkpoints_folder, 'model.pth'), map_location=self.device)
             # model.load_state_dict(state_dict)
             model.load_my_state_dict(state_dict)
             print("Loaded pre-trained model with success.")
@@ -234,3 +242,65 @@ class FineTune(object):
             print('Test ROC AUC:', self.roc_auc)
             
             return test_loss, self.roc_auc
+
+
+
+if __name__ == "__main__":
+    config = yaml.load(open("config_ft_gin.yaml", "r"), Loader=yaml.FullLoader)
+    print(config)
+
+    if 'gap' in config['dataset']['data_dir']:
+        config['task_type'] = 'regression'
+        task_name = 'band'
+    
+    # elif 'gvrh' in config['data_name']:
+    #     config['task_type'] = 'regression'
+    #     task_name = 'gvrh'
+    # elif 'kvrh' in config['data_name']:
+    #     config['task_type'] = 'regression'
+    #     task_name = 'kvrh'
+    elif 'fermi' in config['dataset']['data_dir']:
+        config['task'] = 'regression'
+        task_name = 'fermi'
+    #elif 'is_Metal' in config['data_name']:
+    #     config['task'] = 'classification'
+    #     task_name = 'Is_Metal_cifs'
+    # elif 'dielectric' in config['data_name']:
+    #     config['task_type'] = 'regression'
+    #     task_name = 'dielectric'
+    elif 'lanths' in config['dataset']['data_dir']:
+        config['task'] = 'regression'
+        task_name = 'lanths'
+    # elif 'jdft2d' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'jdft2d'
+    #elif 'phonons' in config['data_name']:
+    #     config['task_type'] = 'regression'
+    #     task_name = 'phonons'
+    # elif 'perovskites' in config['data_name']:
+    #     config['task'] = 'regression'
+    #     task_name = 'perovskites'
+    elif 'FE' in config['dataset']['data_dir']:
+        config['task'] = 'regression'
+        task_name = 'FE'
+    # elif 'GVRH' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'GVRH'
+    # elif 'HOIP' in config['dataset']['root_dir']:
+    #     config['task'] = 'regression'
+    #     task_name = 'HOIP'
+    dataset = CrystalDatasetWrapper(config['batch_size'], **config['dataset'])
+    fine_tune = FineTune(dataset,config)
+    loss, metric = fine_tune.train()
+    #loss, metric = fine_tune._test()
+
+    import pandas as pd
+    ftf = config['fine_tune_from'].split('/')[-1]
+    seed = config['dataset']['random_seed']
+    fn = '{}_{}.csv'.format(ftf, task_name)
+    print(fn)
+    df = pd.DataFrame([[loss, metric.item()]])
+    df.to_csv(
+        os.path.join('experiments', fn),
+        mode='a', index=False, header=False
+    )
