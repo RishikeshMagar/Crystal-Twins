@@ -7,3 +7,29 @@ We developed a framework for SSL learning for crystalline materials. Our method 
 
 ## Benchmark
 The CGCNN model we pretrained using SSL has been tested on the Matbench datasets and the some of the databases from Materials Project. We have made the pretrained models available for general use. The model was pretrained on the Matminer database and the hMOF database. In total, we had 428K crystalline materials for training the ML model.
+
+# Prerequisites
+To run the OGCNN code the following packages are required
+- [PyTorch](http://pytorch.org)
+- [scikit-learn](http://scikit-learn.org/stable/)
+- [pymatgen](http://pymatgen.org). It is preferable to install this package via pip
+- [ase](https://wiki.fysik.dtu.dk/ase/)
+
+It is advised to create a new conda environment and then install these packages. To create a new environment please refer to the conda documentation on managing environments (https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
+
+## Usage
+
+To input crystal structures to OGCNN, you will need to define a customized dataset. Note that this is required for both training and predicting. 
+
+The dataset that we use for this work are in the cif format. 
+
+- [CIF](https://en.wikipedia.org/wiki/Crystallographic_Information_File) files recording the structure of the crystals that you are interested in
+- The values of the target properties for each crystal in the datase
+
+You can create a customized dataset by creating a directory `root_dir` with the following files: 
+<!-- 
+1. `id_prop.csv`: a [CSV](https://en.wikipedia.org/wiki/Comma-separated_values) file with two columns. The first column recodes a unique `ID` for each crystal, and the second column recodes the value of target property. If you want to predict material properties with `predict.py`, you can put any number in the second column. (The second column is still needed.)
+ -->
+1. `atom_init.json`: a [JSON](https://en.wikipedia.org/wiki/JSON) file that stores the initialization vector for each element. An example of `atom_init.json` is `data/sample-regression/atom_init.json`, which should be good for most applications. The `atom_init.json` file has some of the basic atomic features encoded. Please refer the supplementary information of the paper to find out more about the basic atomic features.
+
+2. `ID.cif`: a [CIF](https://en.wikipedia.org/wiki/Crystallographic_Information_File) file that recodes the crystal structure, where `ID` is the unique `ID` for the crystal
