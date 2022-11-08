@@ -9,10 +9,10 @@ We developed a framework for SSL learning for crystalline materials. Our method 
 The CGCNN model we pretrained using SSL has been tested on the Matbench datasets and the some of the databases from Materials Project. We have made the pretrained models available for general use. The model was pretrained on the Matminer database and the hMOF database. In total, we had 428K crystalline materials for training the ML model.
 
 # Prerequisites
-To run the OGCNN code the following packages are required
+To run the CT code the following packages are required
 - [PyTorch](http://pytorch.org)
 - [scikit-learn](http://scikit-learn.org/stable/)
-- [pymatgen](http://pymatgen.org). It is preferable to install this package via pip
+- [pymatgen](http://pymatgen.org). 
 - [ase](https://wiki.fysik.dtu.dk/ase/)
 
 It is advised to create a new conda environment and then install these packages. To create a new environment please refer to the conda documentation on managing environments (https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
