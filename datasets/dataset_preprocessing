@@ -1,1 +1,4 @@
-data preprocesing
+data_ft_ginet.py: Finetune GINETBarlow file 
+data_pretrain_gin.py: Pretrain GINEBarlow File
+
+
