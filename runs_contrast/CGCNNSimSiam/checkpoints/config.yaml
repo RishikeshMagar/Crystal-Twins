@@ -1,0 +1,35 @@
+batch_size: 256
+epochs: 15
+eval_every_n_epochs: 1
+# fine_tune_from: Mar28_16-49-56
+fine_tune_from: None
+log_every_n_steps: 10
+gpu: cuda:3
+
+optim:
+  optimizer: Adam
+  lr: 0.00001
+  weight_decay: 1e-6
+
+model: 
+  atom_fea_len: 64
+  h_fea_len: 256
+  n_conv: 3
+  n_h: 1
+
+dataset:
+  root_dir: matminer
+  max_num_nbr: 12
+  radius: 8
+  dmin: 0
+  step: 0.2
+  random_seed: 666
+
+dataloader:
+  val_ratio: 0.05
+  num_workers: 8
+
+loss:
+  embed_size: 256
+  lambd: 0.0051
+  batch_size: 64

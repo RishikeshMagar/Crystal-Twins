@@ -57,13 +57,12 @@ print("Number of atoms:", len(ATOM_LIST))
 def read_csv(csv_dir, task):
     csv_path = os.path.join(csv_dir, 'id_prop_m.csv')
     cif_ids, labels = [], []
-    FE = False
-    fermi = False
-    if 'lanths' in csv_dir:
-        lanths = True
+    MP_energy = False
+    if 'MP-formation-energy' in csv_dir:
+        MP_energy = True
 
-    if 'fermi' in csv_dir:
-        fermi = True
+    if 'perovskites' in csv_dir:
+        Perovskites = True
 
     with open(csv_path) as csv_file:
         csv_reader = csv.DictReader(csv_file, delimiter=',')
@@ -71,12 +70,11 @@ def read_csv(csv_dir, task):
             if i != 0:
                 cif_id = row['CIF_ID']
                 label = row['val']
-                if lanths:
+                if MP_energy:
                     cif_ids.append(cif_id+'.cif')
-                elif fermi:
+                if Perovskites:
                     cif_ids.append(cif_id+'.cif')
                 else:
-                    print('h')
                     cif_ids.append(cif_id)
 
                 if task == 'classification':
@@ -87,9 +85,6 @@ def read_csv(csv_dir, task):
                     labels.append(float(label))
                 else:
                     ValueError('task must be either regression or classification')
-
-    print("CIF",len(cif_ids))
-    print("Label",len(labels))
     return cif_ids, labels
 
 
@@ -169,7 +164,7 @@ class CrystalDataset(Dataset):
 class CrystalDatasetWrapper(object):
     def __init__(self, 
         batch_size, num_workers, valid_size, test_size, 
-        data_dir='data', k=3, task='regression', random_seed = 1
+        data_dir='data', k=3, task='regression'
     ):
         super(object, self).__init__()
         self.data_dir = data_dir
@@ -179,7 +174,6 @@ class CrystalDatasetWrapper(object):
         self.valid_size = valid_size
         self.test_size = test_size
         self.task = task
-        self.random_seed = random_seed
 
     def get_data_loaders(self):
         train_dataset = CrystalDataset(self.data_dir, self.k, self.task)
@@ -194,7 +188,6 @@ class CrystalDatasetWrapper(object):
 
         # random_state = np.random.RandomState(seed=666)
         # random_state.shuffle(indices)
-        np.random.seed(self.random_seed)
         np.random.shuffle(indices)
 
         split = int(np.floor(self.valid_size * num_train))

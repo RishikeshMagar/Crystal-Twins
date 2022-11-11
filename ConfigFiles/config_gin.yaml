@@ -1,0 +1,27 @@
+batch_size: 256
+epochs: 50
+eval_every_n_epochs: 1
+fine_tune_from: None
+log_every_n_steps: 50
+weight_decay: 1e-6
+fp16_precision: False
+init_lr: 0.0005
+gpu: cuda:1
+
+model: 
+  num_layer: 5
+  emb_dim: 256
+  feat_dim: 1024
+  JK: last
+  drop_ratio: 0
+
+dataset:
+  num_workers: 8
+  valid_size: 0.05
+  data_dir: matminer
+  k: 12
+
+loss:
+  embed_size: 256
+  lambd: 0.0051
+

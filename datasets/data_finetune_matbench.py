@@ -98,11 +98,11 @@ def get_train_val_test_loader(train_dataset, test_dataset, collate_fn=default_co
     train_loader = DataLoader(train_dataset, batch_size=batch_size,
                               sampler=train_sampler,
                               num_workers=num_workers,
-                              collate_fn=collate_fn, pin_memory=pin_memory)
+                              collate_fn=collate_fn, pin_memory=pin_memory, drop_last = True)
     val_loader = DataLoader(train_dataset, batch_size=batch_size,
                             sampler=val_sampler,
                             num_workers=num_workers,
-                            collate_fn=collate_fn, pin_memory=pin_memory)
+                            collate_fn=collate_fn, pin_memory=pin_memory, drop_last = True)
     if return_test:
         test_loader = DataLoader(test_dataset, batch_size=batch_size,
                                  num_workers=num_workers,
@@ -381,17 +381,14 @@ class CIF_train_val_Data(Dataset):
         
         if self.task_type == 'regression':
             target = torch.Tensor([float(target)])
-        
         else:
-            if target == 'True':
+            if target == 'False' or target == 0:
                 label = 0
-            elif target == 'False':
+            elif target == 'True' or target == 1:
                 label = 1
-            # print(label)
-            target = torch.Tensor([float(label)])
+            target = torch.LongTensor([(label)])
         
         return (atom_fea, nbr_fea, nbr_fea_idx), target, cif_id
-
 
 
 class CIF_test_Data(Dataset):
@@ -507,12 +504,11 @@ class CIF_test_Data(Dataset):
         if self.task_type == 'regression':
             target = torch.Tensor([float(target)])
         else:
-            if target == 'True':
+            if target == 'False' or target == 0:
                 label = 0
-            elif target == 'False':
+            elif target == 'True' or target == 1:
                 label = 1
-            # print(label)
-            target = torch.Tensor([float(label)])
+            target = torch.LongTensor([(label)])
         
         return (atom_fea, nbr_fea, nbr_fea_idx), target, cif_id
 

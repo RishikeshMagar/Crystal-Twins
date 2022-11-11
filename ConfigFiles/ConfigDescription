@@ -1,0 +1,4 @@
+config_ft_gin.yaml :  The yaml file for the GIN architecture
+config_ft_matbench_test.yaml  : The yaml file for the testing already finetuned models.
+config_gin.yaml: The yaml file for the GIN model
+config_tsne.yaml: The yaml file for generating the tsne plot 

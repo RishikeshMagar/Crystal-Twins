@@ -1,0 +1,4 @@
+CGCNN model
+
+The Dec01-17-00-50 model is trained on the Barlow Twins loss, the folder contains all the models saved for 20 epochs
+The Jul31_13-31-56 model is trained on the SimSiamese loss, the folder contains all the models saved for 20 epochs
