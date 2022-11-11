@@ -33,3 +33,6 @@ You can create a customized dataset by creating a directory `root_dir` with the 
 1. `atom_init.json`: a [JSON](https://en.wikipedia.org/wiki/JSON) file that stores the initialization vector for each element. The `atom_init.json` file has some of the basic atomic features encoded. Please refer the supplementary information of the paper to find out more about the basic atomic features.
 
 2. `ID.cif`: a [CIF](https://en.wikipedia.org/wiki/Crystallographic_Information_File) file that recodes the crystal structure, where `ID` is the unique `ID` for the crystal
+
+# Pretrained model:
+The models have been pretrained on the cif files in the hMOF database and the matminer database. In total we aggregate 428,275 cif files for the pretraining. The pretrained models along along with their config files are made available in the repository.
