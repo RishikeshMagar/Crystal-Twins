@@ -42,3 +42,18 @@ To run the pretrained model run the command
  python contrast.py
  ```
 The parameters for the pretraining of model can be modified in the `config.yaml`
+
+# Finetuning model:
+For Finetuning the model, we initialize with the pre-trained weights and finetune it for the downstream task. To train it on the matbench datasets, the run the finetuning run 
+For your own dataset, you need to have run `id_prop.csv` in the dataset folder.
+```bash
+ python finetune_cgcnn.py
+ ``` 
+ To run the model on the matbench benchmark run:
+ ```bash
+ python finetune_matbench.py
+ ```  
+# Data
+The matbench data is available at - [Matbench](https://matbench.materialsproject.org)
+For datasets in the Materials Project - [MP](https://materialsproject.org)
+
