@@ -35,4 +35,28 @@ You can create a customized dataset by creating a directory `root_dir` with the 
 2. `ID.cif`: a [CIF](https://en.wikipedia.org/wiki/Crystallographic_Information_File) file that recodes the crystal structure, where `ID` is the unique `ID` for the crystal
 
 # Pretrained model:
-The models have been pretrained on the cif files in the hMOF database and the matminer database. In total we aggregate 428,275 cif files for the pretraining. The pretrained models along along with their config files are made available in the repository.
+The models have been pretrained on the cif files in the hMOF database and the matminer database. In total we aggregate 428,275 cif files for the pretraining. The pretrained models along along with their config files are made available in the repository. We have two pretrained models using the Barlow Twins and the SimSiamese loss functions. 
+To run the pretrained model run the command 
+
+```bash
+ python contrast.py
+ ```
+The parameters for the pretraining of model can be modified in the `config.yaml`
+
+# Finetuning model:
+For Finetuning the model, we initialize with the pre-trained weights and finetune it for the downstream task. To train it on the matbench datasets, the run the finetuning run 
+For your own dataset, you need to have run `id_prop.csv` in the dataset folder.
+```bash
+ python finetune_cgcnn.py
+ ``` 
+ To run the model on the matbench benchmark run:
+ ```bash
+ python finetune_matbench.py
+ ```  
+# Data
+The matbench data is available at - [Matbench](https://matbench.materialsproject.org)
+
+For datasets in the Materials Project - [MP](https://materialsproject.org). 
+
+# 
+
