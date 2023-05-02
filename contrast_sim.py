@@ -19,12 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from datasets.data_pretrain_mask import CIFData
 from datasets.data_pretrain_mask import collate_pool, get_train_val_test_loader
-from models.cgcnn_pretrain import CrystalGraphConvNet
-from loss.barlow_twins import BarlowTwinsLoss
-
-from torch.nn.parallel import DistributedDataParallel as DDP
-
-
+from models.cgcnn_pretrain_sim import CrystalGraphConvNet
 
 
 import warnings
@@ -47,7 +42,7 @@ class CrystalContrastive(object):
         dir_name = current_time
         log_dir = os.path.join('runs_contrast', dir_name)
         self.writer = SummaryWriter(log_dir=log_dir)
-        self.criterion = BarlowTwinsLoss(self.device, **config['loss'])
+    
 
         self.dataset = CIFData(**self.config['dataset'])
         collate_fn = collate_pool
@@ -76,18 +71,20 @@ class CrystalContrastive(object):
 
         return device
 
+    def criterion(self,q, k):
+        return  nn.CosineSimilarity(dim=1)(q,k).to(self.device)
+
     def _step(self, model, data_i, data_j):
         # get the representations and the projections
-        zis = model(*data_i)  # [N,C]
+        zis,pis = model(*data_i)  # [N,C]
         # get the representations and the projections
-        zjs = model(*data_j)  # [N,C]
+        zjs,pjs = model(*data_j)  # [N,C]
 
         # normalize projection feature vectors
-        zis = F.normalize(zis, dim=1)
-        zjs = F.normalize(zjs, dim=1)
+        # zis = F.normalize(zis, dim=1)
+        # zjs = F.normalize(zjs, dim=1)
 
-        loss = self.criterion(zis, zjs)
-        return loss
+        return pis,pjs,zis.detach(),zjs.detach()
 
     def train(self):
 
@@ -151,8 +148,9 @@ class CrystalContrastive(object):
                                 input_2[2],
                                 input_2[3])
                 
-                loss = self._step(model, input_var_rot_1, input_var_rot_2)
+                p1, p2, z1, z2 = self._step(model, input_var_rot_1, input_var_rot_2)
 
+                loss = -(self.criterion(p1, z2).mean() + self.criterion(p2, z1).mean()) * 0.5
                 if n_iter % self.config['log_every_n_steps'] == 0:
                     self.writer.add_scalar('train_loss', loss.item(), global_step=n_iter)
                     self.writer.add_scalar('cosine_lr_decay', scheduler.get_last_lr()[0], global_step=n_iter)
@@ -226,7 +224,8 @@ class CrystalContrastive(object):
                                 input_2[2],
                                 input_2[3])
                 #print("3rd",os.system('free -h'))
-                loss = self._step(model, input_var_rot_1, input_var_rot_2)
+                p1, p2, z1, z2 = self._step(model, input_var_rot_1, input_var_rot_2)
+                loss = -(self.criterion(p1, z2).mean() + self.criterion(p2, z1).mean()) * 0.5
                 loss_total += loss.item() * len(batch_cif_ids)
                 total_num += len(batch_cif_ids)
         
@@ -235,6 +234,7 @@ class CrystalContrastive(object):
         torch.cuda.empty_cache()
         model.train()
         return loss_total
+
 
 
 if __name__ == "__main__":
