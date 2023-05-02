@@ -58,5 +58,9 @@ The matbench data is available at - [Matbench](https://matbench.materialsproject
 
 For datasets in the Materials Project - [MP](https://materialsproject.org). 
 
-# 
+# Acknowledgements
+
+- CGCNN: [https://github.com/txie-93/cgcnn](https://github.com/txie-93/cgcnn)
+- Barlow Twins [https://github.com/facebookresearch/barlowtwins](https://github.com/facebookresearch/barlowtwins)
+- SimSiam [https://github.com/facebookresearch/simsiam](https://github.com/facebookresearch/simsiam)
 
