@@ -348,7 +348,7 @@ class CIF_train_val_Data(Dataset):
     @functools.lru_cache(maxsize=None)  # Cache loaded structures
     def __getitem__(self, idx):
         crystal, target = self.id_prop_data.iloc[idx]
-        cif_id = self.id_prop_data.iloc[0].name
+        cif_id = self.id_prop_data.iloc[idx].name
         # crystal = Structure.from_file(os.path.join(self.root_dir,
         #                                            cif_id))
 
